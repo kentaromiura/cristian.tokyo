@@ -43,7 +43,7 @@ require('http')
       // each resolved chunk will be written right away
       through(chunk => output.write(chunk)),
       {
-        title: 'viperHTML',
+        title: 'Cristian.Tokyo',
         language: 'en',
         script: `${stats.publicPath}/${BUNDLE.name}`,
         isPWA: IS_PWA,
@@ -51,14 +51,24 @@ require('http')
           html {
             font-family: sans-serif;
             text-align: center;
-          }`),
+          }
+          body {
+	    background-color:black;
+          }
+          #bgmain {
+            background-color: white;
+            height: 100vh;
+          }
+          .sign {
+ 	    position: absolute;
+            bottom: 0.5em;
+            right: 2em;
+            color: white;
+            text-shadow: 0 0 1px black, 1px 1px 2px aquamarine, -1px -1px 2px aquamarine, 0 0 4px aquamarine;
+	  }
+`),
         body: [
-          // the order is preserved, no matter when async chunks get resolved
-          new Promise(res => setTimeout(res, 100, '<h1>')),
-          'viperHTML',
-          new Promise(res => setTimeout(res, 20, '</h1><hr>')),
-          new Promise(res => setTimeout(res, 300, 'does <strong>asynchronous')),
-          '</strong> too'
+	'<img id=bgmain src="img/background.svg" /><strong class=sign>a Cristian Carlesso site</strong></section>'
         ]
       }
     )
@@ -66,8 +76,8 @@ require('http')
     .catch(err => {console.error(err); res.end();});
   })
   .listen(
-    process.env.PORT || 3000,
-    process.env.IP || '127.0.0.1',
+    process.env.PORT || 80,
+    process.env.IP || '0.0.0.0',
     function () {
       var addres = this.address();
       console.log(
