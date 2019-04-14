@@ -1,0 +1,3 @@
+[submodule "minimvc"]
+	path = minimvc
+	url = https://github.com/kentaromiura/minimvc.git
