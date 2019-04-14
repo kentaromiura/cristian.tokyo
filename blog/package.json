@@ -1,0 +1,26 @@
+{
+  "name": "blog",
+  "version": "0.1.0",
+  "scripts": {
+    "build": "bsb -make-world",
+    "start": "bsb -make-world -w",
+    "clean": "bsb -clean-world"
+  },
+  "keywords": [
+    "BuckleScript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "bs-platform": "^5.0.1"
+  },
+  "dependencies": {
+    "highlight.js": "^9.15.6",
+    "htmlparser2": "^3.10.1",
+    "markdown-it": "^8.4.2",
+    "markdown-it-footnote": "^3.0.1",
+    "prismjs": "^1.16.0",
+    "slug": "^1.1.0",
+    "snudown-js": "^3.1.5"
+  }
+}
