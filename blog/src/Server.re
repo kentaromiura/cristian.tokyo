@@ -27,7 +27,7 @@ let deHTML: string => string =
       | "quot" => "\""
       | "apos" => "'"
       | "amp" => "&"
-      | _ => capture
+      | _ => "&" ++ capture ++ ";"
       };
     Js.String.unsafeReplaceBy1(deHTMLRegExp, deHTML, codeText);
   };
