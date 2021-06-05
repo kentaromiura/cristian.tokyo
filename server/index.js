@@ -9,7 +9,7 @@ const noCache = require('./no-cache.js');
 
 // local variables
 // which asset should be served as static (CDN optimizations)?
-const STATIC_ASSET = /^\/(?:js\/|css\/|img\/|assets\/|favicon\.ico|manifest.json)/;
+const STATIC_ASSET = /^\/(?:js\/|css\/|img\/|webfonts\/|assets\/|favicon\.ico|manifest.json)/;
 
 // is this a PWA ? If the file client/sw.js exists we assume it is
 const IS_PWA = require('fs').existsSync(join(__dirname, '..', 'client', 'sw.js'));
