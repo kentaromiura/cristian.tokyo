@@ -56,7 +56,7 @@ function deHTML(codeText) {
       case "quot" :
           return "\"";
       default:
-        return capture;
+        return "&" + (capture + ";");
     }
   };
   return codeText.replace(deHTMLRegExp, deHTML$1);
