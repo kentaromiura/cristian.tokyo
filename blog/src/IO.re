@@ -1,16 +1,18 @@
 module Fs = {
   type stats;
 
-  [@bs.module "fs"] external readdirSync: string => array(string) = "";
-  [@bs.module "fs"] external existsSync: string => bool = "";
-  [@bs.module "fs"] external statSync: string => stats = "";
-  [@bs.module "fs"] external readFileSync: (string, string) => string = "";
+  [@bs.module "fs"]
+  external readdirSync: string => array(string) = "readdirSync";
+  [@bs.module "fs"] external existsSync: string => bool = "existsSync";
+  [@bs.module "fs"] external statSync: string => stats = "statSync";
+  [@bs.module "fs"]
+  external readFileSync: (string, string) => string = "readFileSync";
 
-  [@bs.send.pipe: stats] external isFile: bool = "isFile";
+  [@send] external isFile: stats => bool = "isFile";
 };
 
 module Path = {
-  [@bs.module "path"] external join: (string, string) => string = "";
+  [@bs.module "path"] external join: (string, string) => string = "join";
 };
 
 let readFile: string => option(string) =
