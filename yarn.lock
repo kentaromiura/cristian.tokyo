@@ -1585,9 +1585,9 @@ path-parse@^1.0.6:
   version "1.0.6"
   resolved "https://registry.yarnpkg.com/path-parse/-/path-parse-1.0.6.tgz#d62dbb5679405d72c4737ec58600e9ddcf06d24c"
 
-path-to-regexp@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/path-to-regexp/-/path-to-regexp-3.0.0.tgz#c981a218f3df543fa28696be2f88e0c58d2e012a"
+path-to-regexp@^6.1.0:
+  version "6.2.0"
+  resolved "https://registry.yarnpkg.com/path-to-regexp/-/path-to-regexp-6.2.0.tgz#f7b3803336104c346889adece614669230645f38"
 
 posix-character-classes@^0.1.0:
   version "0.1.1"
@@ -1970,11 +1970,11 @@ union-value@^1.0.0:
     is-extendable "^0.1.1"
     set-value "^0.4.3"
 
-universal-router@^8.1.0:
-  version "8.1.0"
-  resolved "https://registry.yarnpkg.com/universal-router/-/universal-router-8.1.0.tgz#1fbd04b8d37633139d6814f7e29dfeeaa446cdfa"
+universal-router@9.0.1:
+  version "9.0.1"
+  resolved "https://registry.yarnpkg.com/universal-router/-/universal-router-9.0.1.tgz#1f4cdd51a45f9e989e40a556a71a2c134552afea"
   dependencies:
-    path-to-regexp "^3.0.0"
+    path-to-regexp "^6.1.0"
 
 unset-value@^1.0.0:
   version "1.0.0"
