@@ -36,15 +36,16 @@ type element;
 type document;
 type hyperHTML;
 
-[@bs.val] external document: document = "";
-[@bs.val] external hyperHTML: hyperHTML = "";
+[@bs.val] external document: document = "document";
+[@bs.val] external hyperHTML: hyperHTML = "hyperHTML";
 
-[@bs.send.pipe: document]
-external getElementById: string => Js.nullable(element) = "getElementById";
+[@send]
+external getElementById: (document, string) => Js.nullable(element) =
+  "getElementById";
 
 type hyperTemplate = string => unit;
-[@bs.send.pipe: hyperHTML]
-external bind: Js.nullable(element) => hyperTemplate = "bind";
+[@send]
+external bind: (hyperHTML, Js.nullable(element)) => hyperTemplate = "bind";
 
 let refRoot: ref(option(hyperTemplate)) = ref(None);
 let render: (State.t, hyperTemplate) => unit = [%bs.raw
@@ -70,7 +71,7 @@ let dispatch: dispatcher =
 let onClicked = () => dispatch(Action.ofType(Update));
 
 let main = () => {
-  let renderer = hyperHTML |> bind(document |> getElementById("root"));
+  let renderer = hyperHTML->bind(document->getElementById("root"));
   refRoot := Some(renderer);
   ignore(render(initialState, renderer));
 };
