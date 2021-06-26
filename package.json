@@ -6,7 +6,7 @@
   "dependencies": {
     "consolemd": "^0.2.1",
     "tiny-cdn": "^0.7.0",
-    "universal-router": "9.0.1"
+    "universal-router": "9.1.0"
   },
   "devDependencies": {
     "@babel/cli": "7.14.3",
