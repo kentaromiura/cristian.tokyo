@@ -30,6 +30,22 @@ const getBlogJS = () =>
     });
   });
 
+  
+const getPathQueryAndHash = (url) => {
+  const [path, rest] = url.split('?');
+  const [queryStr, hash] = (rest || '').split('#');
+  
+  const query = queryStr.split('&').map(part => {
+    const [key, value] = part.split('=');
+    return {[key]: value};
+  })
+  return {
+    pathname: path,
+    query: Object.fromEntries(query),
+    hash: `#${hash}`
+  }  
+}
+
 module.exports = class ServerController extends Controller {
   constructor(server) {
     super();
@@ -360,7 +376,8 @@ a {
 
   handle(request, output) {
     console.log(request.url);
-    return this.router.resolve({ pathname: request.url }).then(html => {
+    const [path, query] = request.url.split('?');
+    return this.router.resolve(getPathQueryAndHash(request.url)).then(html => {
       output.write(html);
     });
   }
