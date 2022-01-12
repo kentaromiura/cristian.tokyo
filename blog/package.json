@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "htmlparser2": "6.1.0",
-    "markdown-it": "12.0.6",
+    "markdown-it": "12.3.2",
     "markdown-it-footnote": "^3.0.1",
     "prismjs": "^1.23.0",
     "slug": "5.0.1"
