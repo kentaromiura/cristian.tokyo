@@ -62,7 +62,12 @@ module.exports = class ServerController extends Controller {
             path: '',
             action: () => `<html>
     <head>
-        <link href="/css/all.css" rel="stylesheet" type="text/css" />
+        <title>Cristian.Tokyo</title>
+        <link rel="preload" href="/webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
+        <link rel="preload" href="/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
+        <link rel="prefetch" href="/img/pattern-50.png" />
+        <link href="/css/all.min.css" rel="stylesheet" type="text/css" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
 html, body {
     padding: 0;
@@ -250,7 +255,12 @@ a {
 </style>
     </head>
     <body>
-        <img src="/img/logo-index.png" alt="" class="logo"/>
+    <picture width="305">
+      <source type="image/webp" srcset="/img/logo-index.webp" class="logo"/>
+      <source type="image/avif" srcset="/img/logo-index.avif" class="logo"/>
+      <img src="/img/logo-index.png" alt="" class="logo"/>
+    </picture>
+      
        <div class="github hvr-wobble-skew hvr-icon-pulse-grow">
            <a href="https://github.com/kentaromiura"><i class="fab fa-github-alt big hvr-icon"></i>&nbsp; Github repository </a> 
        </div>
@@ -298,7 +308,12 @@ a {
             <feMergeNode in="SourceGraphic"></feMergeNode>
         </feMerge>
     </filter>
-</svg><sup><a href="/"><img src="/img/logo-index.png" style="width: 120px;filter: url(#drop-shadow);position: absolute;right: 0;"></a></sup>
+</svg><sup><a href="/">
+<picture style="width: 120px;filter: url(#drop-shadow);position: absolute;right: 0;">
+  <source type="image/avif" srcset="/img/logo-index.avif" />
+  <source type="image/webp" srcset="/img/logo-index.webp" />
+  <img src="/img/logo-index.png" alt="Back to home" />
+</picture></a></sup>
 </footer>
                 </body>
               </html>`
