@@ -3,7 +3,7 @@ module Post = {
   type t = {
     content: string,
     author: string,
-    twitter: string,
+    bsky: string,
     date: string,
     last_edit: string,
     title: string,
@@ -11,8 +11,8 @@ module Post = {
   };
 
   let rec make =
-          (content, author, twitter, date, last_edit, title, description) =>
-    t(~content, ~author, ~twitter, ~date, ~last_edit, ~title, ~description)
+          (content, author, bsky, date, last_edit, title, description) =>
+    t(~content, ~author, ~bsky, ~date, ~last_edit, ~title, ~description)
   and notfound = () =>
     make("Not found", "", "", "", "", "not found", "not found");
 };
@@ -42,7 +42,7 @@ let unsafeFillMeta: ('a, string) => Post.t = [%bs.raw
     const obj = JSON.parse(json);
     return f(
       obj.author,
-      obj.twitter,
+      obj.bsky,
       obj.date,
       obj.last_edit,
       obj.title,

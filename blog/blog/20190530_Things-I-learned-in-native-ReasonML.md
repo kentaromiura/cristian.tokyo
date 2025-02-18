@@ -8,10 +8,10 @@ I’ve learned a multitude of things in the process and I wanted to share them i
 
 ## I - Booting up a project
 
-I initially follow the 
-https://reason-native.com/docs/getting-started guide; if you’re a 
+I initially follow the
+https://reason-native.com/docs/getting-started guide; if you’re a
 seasoned _ocaml_ engineer you probably know exactly how those lisp-looking configuration files exactly works, and it might be the best choice for you.
-If you come from the JS world like me you might find this a bit too overwhelming when anything doesn’t work as 
+If you come from the JS world like me you might find this a bit too overwhelming when anything doesn’t work as
 expected.
 
 In my case I got stuck when I wanted to write my tests;
@@ -31,8 +31,8 @@ Now you can configure your project from the main _package.json_ in a similar way
 
 ## II - Installing 3rd party packages
 
-Installing packages is as easy as to add them to the 
-dependencies/devDependencies properties, in order to install ocaml 
+Installing packages is as easy as to add them to the
+dependencies/devDependencies properties, in order to install ocaml
 packages you just need to add them with the scoped opam namespace like this:
 
 ```json
@@ -73,7 +73,7 @@ As I planned to use [Rely](https://reason-native.com/docs/rely/) I needed to org
 
 I want to be clear that this results from my personal choices and my limited experience with _Reason_ and therefore it’s not guaranteed to be the best:
 
-In the `buildDirs` section of `package.json` I added a `testcases` 
+In the `buildDirs` section of `package.json` I added a `testcases`
 project like this:
 
 ```json
@@ -87,11 +87,11 @@ project like this:
 }
 ```
 
-To work with esy/pesy it needs to start with the 
+To work with esy/pesy it needs to start with the
 same name of the project, I named them like `$MY_PROJECT_NAME_HERE.test-cases.lib`.
 
 >**Important!** The `ocamloptFlags` are needed so that _Rely_ can automatically
- find all the test cases, otherwise the compiler will silently remove 
+ find all the test cases, otherwise the compiler will silently remove
 them in the build step as they're not directly used.
 
 As I previously mention you now need to run `esy pesy` so that it will generate the right folder structures for you.
@@ -99,39 +99,39 @@ As I previously mention you now need to run `esy pesy` so that it will generate 
 As for project structure, here's some note of how I've organized it:
 
 - the `executable` only requires the main library (`my-project.lib`) and in
- my case it also depends on [minicli](https://github.com/UnixJunkie/minicli) for 
+ my case it also depends on [minicli](https://github.com/UnixJunkie/minicli) for
 some basic cli option parsing.
 
-- After parsing the options I call `MyProject.Program.main` 
+- After parsing the options I call `MyProject.Program.main`
 passing the arguments from the cli.
 
 
-This it’s possible because I created a `Program.re` file in the 
+This it’s possible because I created a `Program.re` file in the
 `library` folder, I’ve done this so I can easily run end-to-end tests.
 
-- In the `testcases` folder I've created a `Setup.re` file that looks 
+- In the `testcases` folder I've created a `Setup.re` file that looks
 like this:
 
 ```reason
 /* Setup.re */
 include Rely.Make({
   let re = Str.regexp_string("_esy");
-  let executedPath = 
+  let executedPath =
     Filename.dirname(Sys.argv[0]);
   let projectPath =
     String.sub(
-      executedPath, 
-      0, 
+      executedPath,
+      0,
       Str.search_forward(
-        re, 
-        executedPath, 
+        re,
+        executedPath,
         0
       )
     );
 
   let config =
     Rely.TestFrameworkConfig.initialize({
-      snapshotDir: 
+      snapshotDir:
         projectPath ++ "/__snapshots__",
       projectDir: projectPath,
     });
@@ -184,7 +184,7 @@ My final _buildDirs_ configuration looks like this:
         "console.lib",
         "pastel.lib",
         "lwt",
-        "cohttp", 
+        "cohttp",
         "cohttp-async",
         "cohttp-lwt-unix",
         "yojson"
@@ -206,7 +206,7 @@ For this I use the `cohttp` module, but when I tried to use it there was
 
 ## V - How to use promises
 
-_Disclaimer: if any functional programming expert is reading this, 
+_Disclaimer: if any functional programming expert is reading this,
 please looks the other way and pretend everything is fine._
 
 In ocaml/reason world promises are done through the [lwt](http://ocsigen.org/lwt/4.1.0/manual/manual) package, _lwt_
@@ -225,37 +225,37 @@ let fetchBody = (url) => {
   let headers = ref(Header.init());
 
   headers := Header.add(
-    headers^, 
-    "add-some-headers", 
+    headers^,
+    "add-some-headers",
     "here"
   );
 
   Client.get(~headers=headers^, url)
   >>= (
-    ((resp, body)) => 
+    ((resp, body)) =>
       Cohttp_lwt.Body.to_string(body)
   );
 };
 ```
 
-if you look closely you'll see the _then_ method hidden by the 
+if you look closely you'll see the _then_ method hidden by the
 `>>=` operator, for all intents and purpose it works the same way.
 
 You can call and use the promise like this
 
 ```reason
-fetchBody("http://www.example.com") 
+fetchBody("http://www.example.com")
   >>= body => {
   /* nice(body) */
   return ();
 }
 ```
 
-You can return new values from the promise using `return`; 
+You can return new values from the promise using `return`;
 
 `Promise.all` is also available but with a different name and it's slightly different: it only accepts a list of promises that return nothing.
 
-The function you might look for is called `Lwt.join` and in 
+The function you might look for is called `Lwt.join` and in
 order to use the results, we'll need something like this:
 
 ```reason
@@ -277,7 +277,7 @@ let promiseAll = promises => {
       promises,
     ),
   )
-  >>= (() => 
+  >>= (() =>
     return(results^));
 };
 ```
@@ -318,13 +318,13 @@ For IO I've _taken inspiration_ from [rely IO](
 https://github.com/facebookexperimental/reason-native/blob/master/src/rely/IO.re), plus a single function to return a list of folders:
 
 ```reason
-let listOfallFilesInFolder = 
-  folder => Sys.readdir(folder) 
+let listOfallFilesInFolder =
+  folder => Sys.readdir(folder)
     |> ArrayLabels.to_list;
 ```
 
-Apart for this I've a testcase for each file with the same name apart 
-for the `Program.re` I mentioned before that I've instead called 
+Apart for this I've a testcase for each file with the same name apart
+for the `Program.re` I mentioned before that I've instead called
 `e2e.re`.
 
 ## VII - The Google chain
@@ -334,7 +334,7 @@ In those cases I need to search on the web.
 
 I've found that searching _<Something> Reasonml native_ returns the most relevant results, followed by _<Something> Reasonml_.
 
-In case I can't find any results I usually search for _<Something> Ocaml_. 
+In case I can't find any results I usually search for _<Something> Ocaml_.
 
 Learning the _Ocaml_ syntax is not required as long as you copy and paste any ocaml example in the [try reason page](https://reasonml.github.io/en/try) as it will automatically convert it for you.
 
@@ -342,16 +342,15 @@ In case you still can't figure it out you can ask for help [to the community](ht
 
 ## Conclusions:
 
-I' m very satisfy of _Reason_ for native development, in particular _Rely_ is blazing fast: 
+I' m very satisfy of _Reason_ for native development, in particular _Rely_ is blazing fast:
 it runs all of my tests in milliseconds.
 
 Tooling has vastly improved since just a year ago when I tried to do something similar with bsb-native.
 
-IDE supports (in VSCode) is ok-ish, it still misses some library introspections, 
+IDE supports (in VSCode) is ok-ish, it still misses some library introspections,
 in those case I need to go through the Google chain.
 
-I'd say the experience is _reasonable_. 
-But then people will *rightly* unfollow me. 
+I'd say the experience is _reasonable_.
+But then people will *rightly* unfollow me.
 
-[Discuss on twitter](https://mobile.twitter.com/search?q=http%3A%2F%2Fcristian.tokyo%2Fblog%2FThings-I-learned-in-native-ReasonML%2F)
-
+[Discuss on bluesky](https://bsky.app/search?q=http%3A%2F%2Fcristian.tokyo%2Fblog%2FThings-I-learned-in-native-ReasonML%2F)

@@ -1,8 +1,9 @@
 {
-    "author": "Cristian Carlesso",
-    "twitter": "@kentaromiura",
-    "date": "2019-03-28",
-    "last_edit": "2019-05-30",
-    "title": "Things I learned in native ReasonML",
-    "description": "Things I've learned and observation of writing my first ReasonML Native project."
+  "author": "Cristian Carlesso",
+  "twitter": "@kentaromiura",
+  "bsky": "https://bsky.app/profile/kentaromiura.bsky.social",
+  "date": "2019-03-28",
+  "last_edit": "2025-02-16",
+  "title": "Things I learned in native ReasonML",
+  "description": "Things I've learned and observation of writing my first ReasonML Native project."
 }

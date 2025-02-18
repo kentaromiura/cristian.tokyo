@@ -2,7 +2,7 @@ Writing purely ReasonML
 ========================
 
 I’ve recently stumbled upon a series of videos where [Tsoding](https://twitter.com/@tsoding) solves some brain teaser from [Hacker Rank](https://www.hackerrank.com/)
-> but, you know, in _Haskell_ 
+> but, you know, in _Haskell_
 
 In the [first episode](https://www.youtube.com/watch?v=h_D4P-KRNKs)
 the problem was to get some integers as an input from the stdio and to sum them together.
@@ -10,12 +10,12 @@ the problem was to get some integers as an input from the stdio and to sum them 
 This one line[^1] is the proposed solution:
 
 ```haskell
-main 
-  = interact 
-  $ show 
-  . sum 
-  . map read 
-  . tail 
+main
+  = interact
+  $ show
+  . sum
+  . map read
+  . tail
   . words
 ```
 [^1]: here I use indentation for people reading on a smartphone.
@@ -38,12 +38,12 @@ Let’s define the same operators in _ReasonML_:
 First let’s define a _compose_ function:
 
 ```reason
-let compose 
+let compose
   = (f, g, x) => g(f(x));
 ```
 Let’s also define a _backwardsCompose_ function that execute the second function first:
 ```reason
-let backwardCompose 
+let backwardCompose
   = (f, g, x) => f(g(x));
 ```
 Now it’s possible to associate the two operators to these functions:
@@ -55,11 +55,11 @@ let (<<) = backwardCompose;
 
 After this, let’s substitute _Haskell_ `.` for `<<` and drop the `main =` part as Reason doesn’t need it:
 ```reason
-interact 
-  $ show 
-  << sum 
-  << map read 
-  << tail 
+interact
+  $ show
+  << sum
+  << map read
+  << tail
   << words
 ```
 
@@ -88,8 +88,8 @@ let read = int_of_string;
 ```
 - finally `words` split a string by white spaces, we can apply the `Str.split` and `Str.regexp` functions:
 ```reason
-let words 
-  = Str.split 
+let words
+  = Str.split
   @@ Str.regexp("[ \t\n]+");
 ```
 > Notice how here I’ve used the `@@` application operator:
@@ -107,22 +107,22 @@ We’re only left with `interact`.
 
 I couldn’t find anything similar in _ReasonML_, so I hacked together the interact function using `read_line` instead:
 ```reason
-let interact 
+let interact
   = f => {
     let acc = ref([]);
     try (
       while (true) {
         acc := List.concat(
           [
-            acc^, 
+            acc^,
             [read_line()]
           ]
         );
       }
     ) {
-    | End_of_file => 
-      String.concat("\n", acc^) 
-      |> f 
+    | End_of_file =>
+      String.concat("\n", acc^)
+      |> f
       |> print_string
     };
   };
@@ -132,31 +132,31 @@ Ugh... this uses mutations and imperative code and handling with I/O.
 Last thing remaining yet to do is to change the application of `map read` as I’ve describe above in Reason function application is not the _space character_:
 
 ```reason
-interact 
-  $ show 
-  << sum 
-  << map(read) 
-  << tail 
+interact
+  $ show
+  << sum
+  << map(read)
+  << tail
   << words
 ```
 Rewriting this by reversing the functional composition gives us a more top-down flow:
 ```reason
-interact 
-  $ words 
-  >> tail 
-  >> map(read) 
-  >> sum 
+interact
+  $ words
+  >> tail
+  >> map(read)
+  >> sum
   >> show;
 ```
 
 if we try to compile this, we’ll see that it doesn’t quite work as expected due of how _Reason_ infer the associativity of `$` and `>>`, and it‘s solved by adding parenthesis:
 ```reason
-interact 
+interact
   $ (
-    words 
-    >> tail 
-    >> map(read) 
-    >> sum 
+    words
+    >> tail
+    >> map(read)
+    >> sum
     >> show
   );
 ```
@@ -164,14 +164,16 @@ The main reason `$` exists in Haskell is because of associativity though.
 
 Another way to avoid using parentheses we have in _Reason_ is to use the _reverse application_ operator `|>` and moving `interact` to the end:
 ```reason
-words 
-  >> tail 
-  >> map(read) 
-  >> sum 
-  >> show 
+words
+  >> tail
+  >> map(read)
+  >> sum
+  >> show
   |> interact
-``` 
+```
 
 Conclusions
 ===========
 Apart for the `interact` function we reproduced a solution very similar to the _Haskell_ one, while keeping the same level of purity using mostly a functional approach.
+
+[Discuss on bluesky](https://bsky.app/search?q=https%3A%2F%2Fcristian.tokyo%2Fblog%2FWriting-purely-ReasonML)

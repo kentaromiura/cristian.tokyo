@@ -1,12 +1,12 @@
-const { Model, View, Controller } = require('../minimvc');
-const Router = require('universal-router');
-const babel = require('@babel/core'),
-  presetEnv = require('@babel/preset-env'),
-  externalHelpers = require('@babel/plugin-external-helpers'),
-  transformClasses = require('@babel/plugin-transform-classes');
-const blog = require('../blog/src/Server.bs.js')
+const { Model, View, Controller } = require("../minimvc");
+const Router = require("universal-router");
+const babel = require("@babel/core"),
+  presetEnv = require("@babel/preset-env"),
+  externalHelpers = require("@babel/plugin-external-helpers"),
+  transformClasses = require("@babel/plugin-transform-classes");
+const blog = require("../blog/src/Server.bs.js");
 
-const wrap = require('wrapup')({
+const wrap = require("wrapup")({
   transforms: [
     {
       src: function (module, callback) {
@@ -14,52 +14,51 @@ const wrap = require('wrapup')({
           filename: module.name,
           presets: [presetEnv],
           plugins: [transformClasses],
-          retainLines: true
+          retainLines: true,
         }).code;
         callback(null, module);
-      }
-    }
-  ]
+      },
+    },
+  ],
 });
 
 const getBlogJS = () =>
   new Promise((ok, ko) => {
-    wrap.require(__dirname + '/../blog/src/Index.bs.js').up((err, data) => {
+    wrap.require(__dirname + "/../blog/src/Index.bs.js").up((err, data) => {
       if (err) ko(err);
       ok(data);
     });
   });
 
-  
 const getPathQueryAndHash = (url) => {
-  const [path, rest] = url.split('?');
-  const [queryStr, hash] = (rest || '').split('#');
-  
-  const query = queryStr.split('&').map(part => {
-    const [key, value] = part.split('=');
-    return {[key]: value};
-  })
+  const [path, rest] = url.split("?");
+  const [queryStr, hash] = (rest || "").split("#");
+
+  const query = queryStr.split("&").map((part) => {
+    const [key, value] = part.split("=");
+    return { [key]: value };
+  });
   return {
     pathname: path,
     query: Object.fromEntries(query),
-    hash: `#${hash}`
-  }  
-}
+    hash: `#${hash}`,
+  };
+};
 
 module.exports = class ServerController extends Controller {
   constructor(server) {
     super();
     const routes = [
       {
-        path: '/',
+        path: "/",
         children: [
           {
-            path: '/robots.txt',
+            path: "/robots.txt",
             action: () => `User-agent: *
-            Disallow:`
+            Disallow:`,
           },
           {
-            path: '',
+            path: "",
             action: () => `<html>
     <head>
         <title>Cristian.Tokyo</title>
@@ -202,7 +201,7 @@ body {
     top: 50vh;
     left: 30vw;
     outline: dashed;
-    min-width: 230px;   
+    min-width: 230px;
 }
 
 .blog {
@@ -210,18 +209,18 @@ body {
     top: 10vh;
     left: 30vw;
     min-width: 230px;
-    outline: dashed;   
+    outline: dashed;
 }
 
-.twitter {
+.bsky {
     position: absolute;
     min-width: 230px;
     top: 30vh;
     left: 30vw;
-    outline: dashed;   
+    outline: dashed;
 }
 
-.twitter a,.blog a,.github a {
+.bsky a,.blog a,.github a {
     display: flex;
     align-items: center;
     font-family: Tahoma;
@@ -243,7 +242,7 @@ a {
         top: 30vh;
         left: 10vw;
     }
-    .twitter {
+    .bsky {
         top: 30vh;
         left: 40vw;
     }
@@ -260,26 +259,33 @@ a {
       <source type="image/avif" srcset="/img/logo-index.avif" class="logo"/>
       <img src="/img/logo-index.png" alt="" class="logo"/>
     </picture>
-      
+
        <div class="github hvr-wobble-skew hvr-icon-pulse-grow">
-           <a href="https://github.com/kentaromiura"><i class="fab fa-github-alt big hvr-icon"></i>&nbsp; Github repository </a> 
+           <a href="https://github.com/kentaromiura"><i class="fab fa-github-alt big hvr-icon"></i>&nbsp; Github repository </a>
        </div>
-       <div class="twitter hvr-wobble-skew hvr-icon-pulse-grow">
-            <a href="https://twitter.com/@kentaromiura"><i class="fab fa-twitter big hvr-icon"></i>&nbsp; Twitter </a> 
-       </div> 
+       <div class="bsky hvr-wobble-skew hvr-icon-pulse-grow">
+            <a href="https://bsky.app/profile/kentaromiura.bsky.social">
+            <svg width="48px" fill="#124d12cc" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M111.8 62.2C170.2 105.9 233 194.7 256 242.4c23-47.6 85.8-136.4 144.2-180.2c42.1-31.6 110.3-56 110.3 21.8c0 15.5-8.9 130.5-14.1 149.2C478.2 298 412 314.6 353.1 304.5c102.9 17.5 129.1 75.5 72.5 133.5c-107.4 110.2-154.3-27.6-166.3-62.9l0 0c-1.7-4.9-2.6-7.8-3.3-7.8s-1.6 3-3.3 7.8l0 0c-12 35.3-59 173.1-166.3 62.9c-56.5-58-30.4-116 72.5-133.5C100 314.6 33.8 298 15.7 233.1C10.4 214.4 1.5 99.4 1.5 83.9c0-77.8 68.2-53.4 110.3-21.8z"/></svg>&nbsp; BlueSky </a>
+       </div>
        <div class="blog hvr-wobble-skew hvr-icon-pulse-grow">
-            <a href="/blog"><i class="fas fa-blog big hvr-icon"></i>&nbsp; Blog </a> 
+            <a href="/blog"><i class="fas fa-blog big hvr-icon"></i>&nbsp; Blog </a>
        </div>
     </body>
-</html>`
+</html>`,
           },
           {
-            path: '/blog',
+            path: "/blog",
             action() {
-              console.log(blog.blogEntries)
-              const content = '<ul>' + blog.blogEntries.map(([slug, meta]) =>
-                `<li><a href="/blog/${slug}">${meta.title} (${meta.description})</a></li>`
-              ).join('') + '</ul>'
+              console.log(blog.blogEntries);
+              const content =
+                "<ul>" +
+                blog.blogEntries
+                  .map(
+                    ([slug, meta]) =>
+                      `<li><a href="/blog/${slug}">${meta.title} (${meta.description})</a></li>`,
+                  )
+                  .join("") +
+                "</ul>";
 
               return `<!DOCTYPE html>
               <html lang="en">
@@ -294,7 +300,7 @@ a {
                 </head>
                 <body id=root>
                 <header style="margin:-13px; text-align: right;background: linear-gradient(180deg, rgba(236,236,236,1) 65%, rgba(0,0,0,0) 77%)">
-                  <img alt="logo" src="/img/logo.png"> by <a href="https://twitter.com/@kentaromiura">Cristian Carlesso</a>
+                  <img alt="logo" src="/img/logo.png"> by <a href="https://bsky.app/profile/kentaromiura.bsky.social">Cristian Carlesso</a>
                 </header>
                   ${content}
 <footer style="position: relative;"><svg height="0" xmlns="http://www.w3.org/2000/svg">
@@ -316,21 +322,21 @@ a {
 </picture></a></sup>
 </footer>
                 </body>
-              </html>`
-            }
+              </html>`;
+            },
           },
           {
-            path: '/blog/:entry',
+            path: "/blog/:entry",
             action(detail) {
               const {
                 content,
                 author,
-                twitter,
+                bsky,
                 date,
                 last_edit,
                 title,
-                description
-              } = blog.renderBlogPost(detail.params.entry)
+                description,
+              } = blog.renderBlogPost(detail.params.entry);
               return `<!DOCTYPE html>
                 <html lang="en">
                   <head>
@@ -344,7 +350,7 @@ a {
                   </head>
                   <body id=root>
                   <header style="margin:-13px; text-align: right;background: linear-gradient(180deg, rgba(236,236,236,1) 65%, rgba(0,0,0,0) 77%)">
-                    <img src="/img/logo.png"><a href="/blog">Blog index</a><br />${date}${date != last_edit ? "(last edit: " + last_edit + ")" : ""} <a href="https://twitter.com/${twitter}">${author}</a>
+                    <img src="/img/logo.png"><a href="/blog">Blog index</a><br />${date}${date != last_edit ? "(last edit: " + last_edit + ")" : ""} <a href="${bsky}">${author}</a>
                   </header>
                     ${content}
 <footer style="position: relative;"><svg height="0" xmlns="http://www.w3.org/2000/svg">
@@ -374,26 +380,30 @@ a {
               //     <body id=root></body>
               //   </html>`;
               // });
-            }
-          }
-        ]
-      }
+            },
+          },
+        ],
+      },
     ];
     this.router = new Router(routes, {
       errorHandler(error, context) {
         console.error(error);
         console.info(context);
-        return error.status === 404 ? '<h1>Page Not Found</h1>' : '<h1>Oops! Something went wrong</h1>';
-      }
+        return error.status === 404
+          ? "<h1>Page Not Found</h1>"
+          : "<h1>Oops! Something went wrong</h1>";
+      },
     });
     server(this);
   }
 
   handle(request, output) {
     console.log(request.url);
-    const [path, query] = request.url.split('?');
-    return this.router.resolve(getPathQueryAndHash(request.url)).then(html => {
-      output.write(html);
-    });
+    const [path, query] = request.url.split("?");
+    return this.router
+      .resolve(getPathQueryAndHash(request.url))
+      .then((html) => {
+        output.write(html);
+      });
   }
 };
