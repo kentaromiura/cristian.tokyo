@@ -4,7 +4,7 @@ const babel = require("@babel/core"),
   presetEnv = require("@babel/preset-env"),
   externalHelpers = require("@babel/plugin-external-helpers"),
   transformClasses = require("@babel/plugin-transform-classes");
-const blog = require("../blog/src/Server.bs.js");
+const blog = require("../blog/src/Server.js");
 
 const wrap = require("wrapup")({
   transforms: [

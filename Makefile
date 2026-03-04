@@ -5,5 +5,5 @@ all:
 	(cd blog; yarn)
 
 run:
+	(cd blog; yarn build)
 	PORT=3000 node index
-

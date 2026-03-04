@@ -4,31 +4,31 @@
 
 function make(name, iterations) {
   return {
-          iterations: iterations,
-          name: name
-        };
+    iterations: iterations,
+    name: name
+  };
 }
 
-var State = {
+let State = {
   make: make
 };
 
 function ofType(actionType) {
   return {
-          kind: actionType
-        };
+    kind: actionType
+  };
 }
 
-var Action = {
+let Action = {
   ofType: ofType
 };
 
-var initialState = {
+let initialState = {
   iterations: 0,
   name: "world"
 };
 
-var mutatedState = {
+let mutatedState = {
   contents: initialState
 };
 
@@ -44,38 +44,37 @@ function updateState(previous, action) {
   return mutatedState.contents;
 }
 
-var refRoot = {
+let refRoot = {
   contents: undefined
 };
 
-var render = ((state, root) => root`<div onclick=${onClicked}>
-    Hello, ${state.name} ${state.iterations}
-  </div>`);
+let onClicked = ((function() { return window.onclickHandler(); }));
+
+function makeTemplate(state) {
+  let name = state.name;
+  let iterations = state.iterations.toString();
+  return "<div onclick=" + onClicked + ">Hello, " + name + " " + iterations + "</div>";
+}
+
+function render(state, root) {
+  root(makeTemplate(state));
+}
 
 function dispatch(action) {
-  var root = refRoot.contents;
-  var state = updateState(mutatedState.contents, action);
+  let root = refRoot.contents;
+  let state = updateState(mutatedState.contents, action);
   if (root !== undefined) {
-    render(state, root);
+    root(makeTemplate(state));
   }
-  
 }
 
-function onClicked(param) {
-  return dispatch({
-              kind: /* Update */0
-            });
-}
-
-function main(param) {
-  var renderer = hyperHTML.bind(document.getElementById("root"));
+function main() {
+  let renderer = hyperHTML.bind(document.getElementById("root"));
   refRoot.contents = renderer;
-  render(initialState, renderer);
-  
+  renderer(makeTemplate(initialState));
 }
 
-window.onload=main
-;
+((window.onload = main));
 
 exports.State = State;
 exports.Action = Action;
@@ -84,8 +83,9 @@ exports.mutatedState = mutatedState;
 exports.unref = unref;
 exports.updateState = updateState;
 exports.refRoot = refRoot;
+exports.onClicked = onClicked;
+exports.makeTemplate = makeTemplate;
 exports.render = render;
 exports.dispatch = dispatch;
-exports.onClicked = onClicked;
 exports.main = main;
 /*  Not a pure module */
