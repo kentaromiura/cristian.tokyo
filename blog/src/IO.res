@@ -13,6 +13,9 @@ module Fs = {
   @module("fs")
   external readFileSync: (string, string) => string = "readFileSync"
 
+  @module("fs")
+  external watch: (string, (string, option<string>) => unit) => unit = "watch"
+
   @send
   external isFile: stats => bool = "isFile"
 }

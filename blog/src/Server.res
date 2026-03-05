@@ -23,7 +23,15 @@ module Post = {
     }
   }
 
-  let notfound = () => {content: "Not found", author: "", bsky: "", date: "", last_edit: "", title: "not found", description: "not found"}
+  let notfound = () => {
+    content: "Not found",
+    author: "",
+    bsky: "",
+    date: "",
+    last_edit: "",
+    title: "not found",
+    description: "not found",
+  }
 }
 
 let deHTML: string => string = %raw(`(codeText) => codeText.replace(/&(.+?);/g, (m, c) => {
@@ -39,8 +47,10 @@ let deHTML: string => string = %raw(`(codeText) => codeText.replace(/&(.+?);/g, 
 
 let endsWith: (string, string) => bool = (text, search) => Js.String.endsWith(search, text)
 
+let blogFolder = "blog/blog"
+
 let blogPostcontent: string => string = filename => {
-  let allFiles = IO.readDir("blog/blog")
+  let allFiles = IO.readDir(blogFolder)
   let article = Belt.List.keep(allFiles, file => endsWith(file, "_" ++ filename ++ ".md"))
   if Belt.List.length(article) == 0 {
     "Not found yo!"
@@ -56,25 +66,23 @@ let blogPostcontent: string => string = filename => {
       if Array.length(domlist) != 0 {
         let codelist = HtmlParser.getElementsByTagName("code", domlist)
 
-        Js.Array.forEach(
-          code => {
-            let codeText = HtmlParser.getText(code)
-            let language = HtmlParser.hasAttrib(code, "class")
-              ? HtmlParser.getAttributeValue(code, "class")
-              : "language-javascript"
-            let isMultiline: bool = %raw("codeText.includes('\\n')")
-            if isMultiline {
-              let highlighted = Prism.highlight(deHTML(codeText), language)
-              let replacementHtml = "<code class='multiline " ++ language ++ "'>" ++ highlighted ++ "</code>"
-              let replacement = switch HtmlParser.parseDOM(replacementHtml)[0] {
-              | Some(r) => r
-              | None => code
-              }
-              HtmlParser.replaceElement(code, replacement)
+        Js.Array.forEach(code => {
+          let codeText = HtmlParser.getText(code)
+          let language = HtmlParser.hasAttrib(code, "class")
+            ? HtmlParser.getAttributeValue(code, "class")
+            : "language-javascript"
+          let isMultiline: bool = %raw("codeText.includes('\\n')")
+          if isMultiline {
+            let highlighted = Prism.highlight(deHTML(codeText), language)
+            let replacementHtml =
+              "<code class='multiline " ++ language ++ "'>" ++ highlighted ++ "</code>"
+            let replacement = switch HtmlParser.parseDOM(replacementHtml)[0] {
+            | Some(r) => r
+            | None => code
             }
-          },
-          codelist,
-        )
+            HtmlParser.replaceElement(code, replacement)
+          }
+        }, codelist)
         HtmlParser.getOuterHTML(domlist)
       } else {
         marked
@@ -102,26 +110,82 @@ let getSlug: string => string = file => {
   }
 }
 
-let blogEntries = {
-  let allFiles = IO.readDir("blog/blog")
+type blogCacheData = {
+  data: array<(string, Post.t)>,
+  version: int,
+}
+
+type state = {
+  data: array<(string, Post.t)>,
+  version: int,
+  refreshPromise: option<promise<unit>>,
+}
+
+let stateRef = ref({data: [], version: 0, refreshPromise: None})
+
+let getBlogEntries = () => {
+  let allFiles = IO.readDir(blogFolder)
   let jsons = Belt.List.keep(allFiles, file => endsWith(file, ".json"))
   let blogposts = Belt.List.map(jsons, entry => {
     let slug = getSlug(entry)
-    let filePath = IO.Path.join("blog/blog", entry)
+    let filePath = IO.Path.join(blogFolder, entry)
     let file = IO.readFile(filePath)
     switch file {
     | None => None
-    | Some(json) =>
-      Some((slug, Post.fromJson(json)))
+    | Some(json) => Some((slug, Post.fromJson(json)))
     }
   })
-  let filtered = Belt.List.keep(blogposts, opt =>
-    switch opt {
-    | None => false
-    | Some(_) => true
-    }
-  )
+  let filtered = Belt.List.keepMap(blogposts, opt => opt)
   Belt.List.toArray(filtered)
+}
+
+let refreshCache = () => {
+  stateRef := {data: getBlogEntries(), version: stateRef.contents.version + 1, refreshPromise: None}
+}
+
+let scheduleRefresh = () => {
+  switch stateRef.contents.refreshPromise {
+  | Some(_) => ()
+  | None => {
+      let promise = %raw(`new Promise(resolve => {
+    setTimeout(resolve, 500)
+  })`)
+      stateRef := {
+          data: stateRef.contents.data,
+          version: stateRef.contents.version,
+          refreshPromise: Some(promise),
+        }
+      Promise.then(promise, _ => {
+        refreshCache()
+        Promise.resolve()
+      })->ignore
+    }
+  }
+}
+
+let _init = {
+  stateRef := {
+      data: getBlogEntries(),
+      version: 1,
+      refreshPromise: None,
+    }
+  IO.Fs.watch(blogFolder, (_eventType, filename) => {
+    switch filename {
+    | None => ()
+    | Some(_) => scheduleRefresh()
+    }
+  })
+}
+
+let getCachedBlogEntries = () => {
+  stateRef.contents.data
+}
+
+let waitForRefresh = () => {
+  switch stateRef.contents.refreshPromise {
+  | Some(p) => p
+  | None => %raw(`Promise.resolve()`)
+  }
 }
 
 let renderBlogPost: string => Post.t = filename => {
@@ -138,7 +202,7 @@ let renderBlogPost: string => Post.t = filename => {
     | Some(json) =>
       let content = blogPostcontent(filename)
       let post = Post.fromJson(json)
-      {...post, content: content}
+      {...post, content}
     }
   }
 }

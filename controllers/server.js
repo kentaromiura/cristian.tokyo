@@ -5,7 +5,13 @@ const babel = require("@babel/core"),
   externalHelpers = require("@babel/plugin-external-helpers"),
   transformClasses = require("@babel/plugin-transform-classes");
 const blog = require("../blog/src/Server.js");
-
+const getBlogEntriesAsync = async () => {
+  const entries = blog.getCachedBlogEntries();
+  if (blog.waitForRefresh) {
+    await blog.waitForRefresh();
+  }
+  return blog.getCachedBlogEntries();
+};
 const wrap = require("wrapup")({
   transforms: [
     {
@@ -275,11 +281,12 @@ a {
           },
           {
             path: "/blog",
-            action() {
-              console.log(blog.blogEntries);
+            async action() {
+              const blogEntries = await getBlogEntriesAsync();
+              console.log(blogEntries);
               const content =
                 "<ul>" +
-                blog.blogEntries
+                blogEntries
                   .map(
                     ([slug, meta]) =>
                       `<li><a href="/blog/${slug}">${meta.title} (${meta.description})</a></li>`,

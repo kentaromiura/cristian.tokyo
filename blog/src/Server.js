@@ -2,6 +2,7 @@
 'use strict';
 
 let IO = require("./IO.js");
+let Fs = require("fs");
 let Path = require("path");
 let Prism = require("./Prism.js");
 let Js_array = require("@rescript/runtime/lib/js/Js_array.js");
@@ -57,8 +58,10 @@ function endsWith(text, search) {
   return Js_string.endsWith(search, text);
 }
 
+let blogFolder = "blog/blog";
+
 function blogPostcontent(filename) {
-  let allFiles = IO.readDir("blog/blog");
+  let allFiles = IO.readDir(blogFolder);
   let article = Belt_List.keep(allFiles, file => Js_string.endsWith("_" + filename + ".md", file));
   if (Belt_List.length(article) === 0) {
     return "Not found yo!";
@@ -110,25 +113,82 @@ function getSlug(file) {
   }
 }
 
-let allFiles = IO.readDir("blog/blog");
+let stateRef = {
+  contents: {
+    data: [],
+    version: 0,
+    refreshPromise: undefined
+  }
+};
 
-let jsons = Belt_List.keep(allFiles, file => Js_string.endsWith(".json", file));
+function getBlogEntries() {
+  let allFiles = IO.readDir(blogFolder);
+  let jsons = Belt_List.keep(allFiles, file => Js_string.endsWith(".json", file));
+  let blogposts = Belt_List.map(jsons, entry => {
+    let slug = getSlug(entry);
+    let filePath = Path.join(blogFolder, entry);
+    let file = IO.readFile(filePath);
+    if (file !== undefined) {
+      return [
+        slug,
+        fromJson(file)
+      ];
+    }
+  });
+  return Belt_List.toArray(Belt_List.keepMap(blogposts, opt => opt));
+}
 
-let blogposts = Belt_List.map(jsons, entry => {
-  let slug = getSlug(entry);
-  let filePath = Path.join("blog/blog", entry);
-  let file = IO.readFile(filePath);
-  if (file !== undefined) {
-    return [
-      slug,
-      fromJson(file)
-    ];
+function refreshCache() {
+  stateRef.contents = {
+    data: getBlogEntries(),
+    version: stateRef.contents.version + 1 | 0,
+    refreshPromise: undefined
+  };
+}
+
+function scheduleRefresh() {
+  let match = stateRef.contents.refreshPromise;
+  if (match !== undefined) {
+    return;
+  }
+  let promise = (new Promise(resolve => {
+    setTimeout(resolve, 500)
+  }));
+  stateRef.contents = {
+    data: stateRef.contents.data,
+    version: stateRef.contents.version,
+    refreshPromise: promise
+  };
+  promise.then(param => {
+    refreshCache();
+    return Promise.resolve();
+  });
+}
+
+stateRef.contents = {
+  data: getBlogEntries(),
+  version: 1,
+  refreshPromise: undefined
+};
+
+Fs.watch(blogFolder, (_eventType, filename) => {
+  if (filename !== undefined) {
+    return scheduleRefresh();
   }
 });
 
-let filtered = Belt_List.keep(blogposts, opt => opt !== undefined);
+function getCachedBlogEntries() {
+  return stateRef.contents.data;
+}
 
-let blogEntries = Belt_List.toArray(filtered);
+function waitForRefresh() {
+  let p = stateRef.contents.refreshPromise;
+  if (p !== undefined) {
+    return p;
+  } else {
+    return (Promise.resolve());
+  }
+}
 
 function renderBlogPost(filename) {
   let allFiles = IO.readDir("blog/blog");
@@ -171,11 +231,20 @@ function renderBlogPost(filename) {
   };
 }
 
+let _init;
+
 exports.Post = Post;
 exports.deHTML = deHTML;
 exports.endsWith = endsWith;
+exports.blogFolder = blogFolder;
 exports.blogPostcontent = blogPostcontent;
 exports.getSlug = getSlug;
-exports.blogEntries = blogEntries;
+exports.stateRef = stateRef;
+exports.getBlogEntries = getBlogEntries;
+exports.refreshCache = refreshCache;
+exports.scheduleRefresh = scheduleRefresh;
+exports._init = _init;
+exports.getCachedBlogEntries = getCachedBlogEntries;
+exports.waitForRefresh = waitForRefresh;
 exports.renderBlogPost = renderBlogPost;
-/* allFiles Not a pure module */
+/*  Not a pure module */
