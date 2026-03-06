@@ -10,16 +10,36 @@ module Post = {
     description: string,
   }
 
-  let fromJson = (_json: string): t => {
-    let obj = %raw("(function(j) { return JSON.parse(j); })(_json)")
+  let frontMatter = frontMatterData => {
+    let lines = String.split(frontMatterData, "\n")
+    Array.reduce(lines, Map.make(), (result, line) => {
+      let match = String.match(line->String.trim, /^([^:]+):\s*(.*)$/)
+      switch match {
+      | Some(m) => {
+          let left = m[1]->Option.getUnsafe
+          let right = m[2]->Option.getUnsafe
+          let _ = Map.set(
+            result,
+            String.trim(left->Option.getOr("")),
+            String.trim(right->Option.getOr("")),
+          )
+          result
+        }
+      | None => result
+      }
+    })
+  }
+
+  let fromFrontmatter = (frontmatter: string, content: string): t => {
+    let obj = frontMatter(frontmatter)
     {
-      content: "",
-      author: obj.author,
-      bsky: obj.bsky,
-      date: obj.date,
-      last_edit: obj.last_edit,
-      title: obj.title,
-      description: obj.description,
+      content,
+      author: obj->Map.get("author")->Option.getOr(""),
+      bsky: obj->Map.get("bsky")->Option.getOr(""),
+      date: obj->Map.get("date")->Option.getOr(""),
+      last_edit: obj->Map.get("last_edit")->Option.getOr(""),
+      title: obj->Map.get("title")->Option.getOr(""),
+      description: obj->Map.get("description")->Option.getOr(""),
     }
   }
 
@@ -49,50 +69,37 @@ let endsWith: (string, string) => bool = (text, search) => Js.String.endsWith(se
 
 let blogFolder = "blog/blog"
 
-let blogPostcontent: string => string = filename => {
-  let allFiles = IO.readDir(blogFolder)
-  let article = Belt.List.keep(allFiles, file => endsWith(file, "_" ++ filename ++ ".md"))
-  if Belt.List.length(article) == 0 {
-    "Not found yo!"
-  } else {
-    let firstArticle = Belt.List.headExn(article)
-    let filePath = IO.Path.join("blog/blog", firstArticle)
-    let file = IO.readFile(filePath)
-    switch file {
-    | None => ""
-    | Some(text) =>
-      let marked = Markdown.markdown(text)
-      let domlist = HtmlParser.parseDOM(marked)
-      if Array.length(domlist) != 0 {
-        let codelist = HtmlParser.getElementsByTagName("code", domlist)
+let blogPostFromText: string => string = text => {
+  let marked = Markdown.markdown(text)
+  let domlist = HtmlParser.parseDOM(marked)
+  if Array.length(domlist) != 0 {
+    let codelist = HtmlParser.getElementsByTagName("code", domlist)
 
-        Js.Array.forEach(code => {
-          let codeText = HtmlParser.getText(code)
-          let language = HtmlParser.hasAttrib(code, "class")
-            ? HtmlParser.getAttributeValue(code, "class")
-            : "language-javascript"
-          let isMultiline: bool = %raw("codeText.includes('\\n')")
-          if isMultiline {
-            let highlighted = Prism.highlight(deHTML(codeText), language)
-            let replacementHtml =
-              "<code class='multiline " ++ language ++ "'>" ++ highlighted ++ "</code>"
-            let replacement = switch HtmlParser.parseDOM(replacementHtml)[0] {
-            | Some(r) => r
-            | None => code
-            }
-            HtmlParser.replaceElement(code, replacement)
-          }
-        }, codelist)
-        HtmlParser.getOuterHTML(domlist)
-      } else {
-        marked
+    Js.Array.forEach(code => {
+      let codeText = HtmlParser.getText(code)
+      let language = HtmlParser.hasAttrib(code, "class")
+        ? HtmlParser.getAttributeValue(code, "class")
+        : "language-javascript"
+      let isMultiline: bool = codeText->String.includes("\n")
+      if isMultiline {
+        let highlighted = Prism.highlight(deHTML(codeText), language)
+        let replacementHtml =
+          "<code class='multiline " ++ language ++ "'>" ++ highlighted ++ "</code>"
+        let replacement = switch HtmlParser.parseDOM(replacementHtml)[0] {
+        | Some(r) => r
+        | None => code
+        }
+        HtmlParser.replaceElement(code, replacement)
       }
-    }
+    }, codelist)
+    HtmlParser.getOuterHTML(domlist)
+  } else {
+    marked
   }
 }
 
 let getSlug: string => string = file => {
-  let re = RegExp.fromString("_(.+).json")
+  let re = RegExp.fromString("_(.+).md")
   let result = RegExp.exec(re, file)
   switch result {
   | None => ""
@@ -125,14 +132,21 @@ let stateRef = ref({data: [], version: 0, refreshPromise: None})
 
 let getBlogEntries = () => {
   let allFiles = IO.readDir(blogFolder)
-  let jsons = Belt.List.keep(allFiles, file => endsWith(file, ".json"))
-  let blogposts = Belt.List.map(jsons, entry => {
+  let mdFiles = Belt.List.keep(allFiles, file => endsWith(file, ".md"))
+  let blogposts = Belt.List.map(mdFiles, entry => {
     let slug = getSlug(entry)
     let filePath = IO.Path.join(blogFolder, entry)
     let file = IO.readFile(filePath)
     switch file {
     | None => None
-    | Some(json) => Some((slug, Post.fromJson(json)))
+    | Some(content) =>
+      let result = KindOfMatter.separate(content)
+      
+      switch result {
+      | Error(_) => None
+      | Ok(matterText, content) =>
+        Some((slug, Post.fromFrontmatter(matterText, blogPostFromText(content))))
+      }
     }
   })
   let filtered = Belt.List.keepMap(blogposts, opt => opt)
@@ -189,20 +203,13 @@ let waitForRefresh = () => {
 }
 
 let renderBlogPost: string => Post.t = filename => {
-  let allFiles = IO.readDir("blog/blog")
-  let meta = Belt.List.keep(allFiles, file => endsWith(file, "_" ++ filename ++ ".json"))
-  if Belt.List.length(meta) == 0 {
-    Post.notfound()
-  } else {
-    let firstMeta = Belt.List.headExn(meta)
-    let filePath = IO.Path.join("blog/blog", firstMeta)
-    let file = IO.readFile(filePath)
-    switch file {
+  // Return from cached data.
+  let cached = getCachedBlogEntries()
+  switch cached->Array.find(x => {
+    let (s, _) = x
+    s == filename
+  }) {
     | None => Post.notfound()
-    | Some(json) =>
-      let content = blogPostcontent(filename)
-      let post = Post.fromJson(json)
-      {...post, content}
-    }
+    | Some((_, blog)) => blog
   }
 }

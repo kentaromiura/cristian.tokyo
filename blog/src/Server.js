@@ -11,18 +11,35 @@ let Belt_List = require("@rescript/runtime/lib/js/Belt_List.js");
 let Js_string = require("@rescript/runtime/lib/js/Js_string.js");
 let Belt_Array = require("@rescript/runtime/lib/js/Belt_Array.js");
 let Htmlparser2 = require("htmlparser2");
+let KindOfMatter = require("./KindOfMatter.js");
+let Stdlib_Array = require("@rescript/runtime/lib/js/Stdlib_Array.js");
+let Stdlib_Option = require("@rescript/runtime/lib/js/Stdlib_Option.js");
 let Primitive_option = require("@rescript/runtime/lib/js/Primitive_option.js");
 
-function fromJson(_json) {
-  let obj = ((function(j) { return JSON.parse(j); })(_json));
+function frontMatter(frontMatterData) {
+  let lines = frontMatterData.split("\n");
+  return Stdlib_Array.reduce(lines, new Map(), (result, line) => {
+    let match = line.trim().match(/^([^:]+):\s*(.*)$/);
+    if (match == null) {
+      return result;
+    }
+    let left = match[1];
+    let right = match[2];
+    result.set(Stdlib_Option.getOr(left, "").trim(), Stdlib_Option.getOr(right, "").trim());
+    return result;
+  });
+}
+
+function fromFrontmatter(frontmatter, content) {
+  let obj = frontMatter(frontmatter);
   return {
-    content: "",
-    author: obj.author,
-    bsky: obj.bsky,
-    date: obj.date,
-    last_edit: obj.last_edit,
-    title: obj.title,
-    description: obj.description
+    content: content,
+    author: Stdlib_Option.getOr(obj.get("author"), ""),
+    bsky: Stdlib_Option.getOr(obj.get("bsky"), ""),
+    date: Stdlib_Option.getOr(obj.get("date"), ""),
+    last_edit: Stdlib_Option.getOr(obj.get("last_edit"), ""),
+    title: Stdlib_Option.getOr(obj.get("title"), ""),
+    description: Stdlib_Option.getOr(obj.get("description"), "")
   };
 }
 
@@ -39,7 +56,8 @@ function notfound() {
 }
 
 let Post = {
-  fromJson: fromJson,
+  frontMatter: frontMatter,
+  fromFrontmatter: fromFrontmatter,
   notfound: notfound
 };
 
@@ -60,19 +78,8 @@ function endsWith(text, search) {
 
 let blogFolder = "blog/blog";
 
-function blogPostcontent(filename) {
-  let allFiles = IO.readDir(blogFolder);
-  let article = Belt_List.keep(allFiles, file => Js_string.endsWith("_" + filename + ".md", file));
-  if (Belt_List.length(article) === 0) {
-    return "Not found yo!";
-  }
-  let firstArticle = Belt_List.headExn(article);
-  let filePath = Path.join("blog/blog", firstArticle);
-  let file = IO.readFile(filePath);
-  if (file === undefined) {
-    return "";
-  }
-  let marked = Markdown.markdown(file);
+function blogPostFromText(text) {
+  let marked = Markdown.markdown(text);
   let domlist = Htmlparser2.parseDOM(marked);
   if (domlist.length === 0) {
     return marked;
@@ -81,7 +88,7 @@ function blogPostcontent(filename) {
   Js_array.forEach(code => {
     let codeText = Htmlparser2.DomUtils.getText(code);
     let language = Htmlparser2.DomUtils.hasAttrib(code, "class") ? Htmlparser2.DomUtils.getAttributeValue(code, "class") : "language-javascript";
-    let isMultiline = (codeText.includes('\\n'));
+    let isMultiline = codeText.includes("\n");
     if (!isMultiline) {
       return;
     }
@@ -95,7 +102,7 @@ function blogPostcontent(filename) {
 }
 
 function getSlug(file) {
-  let re = new RegExp("_(.+).json");
+  let re = new RegExp("_(.+).md");
   let result = re.exec(file);
   if (result == null) {
     return "";
@@ -123,15 +130,19 @@ let stateRef = {
 
 function getBlogEntries() {
   let allFiles = IO.readDir(blogFolder);
-  let jsons = Belt_List.keep(allFiles, file => Js_string.endsWith(".json", file));
-  let blogposts = Belt_List.map(jsons, entry => {
+  let mdFiles = Belt_List.keep(allFiles, file => Js_string.endsWith(".md", file));
+  let blogposts = Belt_List.map(mdFiles, entry => {
     let slug = getSlug(entry);
     let filePath = Path.join(blogFolder, entry);
     let file = IO.readFile(filePath);
-    if (file !== undefined) {
+    if (file === undefined) {
+      return;
+    }
+    let result = KindOfMatter.separate(file);
+    if (result.TAG === "Ok") {
       return [
         slug,
-        fromJson(file)
+        fromFrontmatter(result._0, blogPostFromText(result._1))
       ];
     }
   });
@@ -191,8 +202,26 @@ function waitForRefresh() {
 }
 
 function renderBlogPost(filename) {
+  let cached = stateRef.contents.data;
+  let match = cached.find(x => x[0] === filename);
+  if (match !== undefined) {
+    return match[1];
+  } else {
+    return {
+      content: "Not found",
+      author: "",
+      bsky: "",
+      date: "",
+      last_edit: "",
+      title: "not found",
+      description: "not found"
+    };
+  }
+}
+
+function _renderBlogPost(filename) {
   let allFiles = IO.readDir("blog/blog");
-  let meta = Belt_List.keep(allFiles, file => Js_string.endsWith("_" + filename + ".json", file));
+  let meta = Belt_List.keep(allFiles, file => Js_string.endsWith("_" + filename + ".md", file));
   if (Belt_List.length(meta) === 0) {
     return {
       content: "Not found",
@@ -218,17 +247,20 @@ function renderBlogPost(filename) {
       description: "not found"
     };
   }
-  let content = blogPostcontent(filename);
-  let post = fromJson(file);
-  return {
-    content: content,
-    author: post.author,
-    bsky: post.bsky,
-    date: post.date,
-    last_edit: post.last_edit,
-    title: post.title,
-    description: post.description
-  };
+  let result = KindOfMatter.separate(file);
+  if (result.TAG === "Ok") {
+    return fromFrontmatter(result._0, blogPostFromText(result._1));
+  } else {
+    return {
+      content: "Not found",
+      author: "",
+      bsky: "",
+      date: "",
+      last_edit: "",
+      title: "not found",
+      description: "not found"
+    };
+  }
 }
 
 let _init;
@@ -237,7 +269,7 @@ exports.Post = Post;
 exports.deHTML = deHTML;
 exports.endsWith = endsWith;
 exports.blogFolder = blogFolder;
-exports.blogPostcontent = blogPostcontent;
+exports.blogPostFromText = blogPostFromText;
 exports.getSlug = getSlug;
 exports.stateRef = stateRef;
 exports.getBlogEntries = getBlogEntries;
@@ -247,4 +279,5 @@ exports._init = _init;
 exports.getCachedBlogEntries = getCachedBlogEntries;
 exports.waitForRefresh = waitForRefresh;
 exports.renderBlogPost = renderBlogPost;
+exports._renderBlogPost = _renderBlogPost;
 /*  Not a pure module */
