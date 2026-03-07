@@ -10,6 +10,7 @@ let Markdown = require("./Markdown.js");
 let Belt_List = require("@rescript/runtime/lib/js/Belt_List.js");
 let Js_string = require("@rescript/runtime/lib/js/Js_string.js");
 let Belt_Array = require("@rescript/runtime/lib/js/Belt_Array.js");
+let Stdlib_Date = require("@rescript/runtime/lib/js/Stdlib_Date.js");
 let Htmlparser2 = require("htmlparser2");
 let KindOfMatter = require("./KindOfMatter.js");
 let Stdlib_Array = require("@rescript/runtime/lib/js/Stdlib_Array.js");
@@ -146,7 +147,10 @@ function getBlogEntries() {
       ];
     }
   });
-  return Belt_List.toArray(Belt_List.keepMap(blogposts, opt => opt));
+  let filtered = Belt_List.keepMap(blogposts, opt => opt);
+  let res = Belt_List.toArray(filtered);
+  res.sort((x, y) => Stdlib_Date.compare(new Date(y[1].date), new Date(x[1].date)));
+  return res;
 }
 
 function refreshCache() {
@@ -219,50 +223,6 @@ function renderBlogPost(filename) {
   }
 }
 
-function _renderBlogPost(filename) {
-  let allFiles = IO.readDir("blog/blog");
-  let meta = Belt_List.keep(allFiles, file => Js_string.endsWith("_" + filename + ".md", file));
-  if (Belt_List.length(meta) === 0) {
-    return {
-      content: "Not found",
-      author: "",
-      bsky: "",
-      date: "",
-      last_edit: "",
-      title: "not found",
-      description: "not found"
-    };
-  }
-  let firstMeta = Belt_List.headExn(meta);
-  let filePath = Path.join("blog/blog", firstMeta);
-  let file = IO.readFile(filePath);
-  if (file === undefined) {
-    return {
-      content: "Not found",
-      author: "",
-      bsky: "",
-      date: "",
-      last_edit: "",
-      title: "not found",
-      description: "not found"
-    };
-  }
-  let result = KindOfMatter.separate(file);
-  if (result.TAG === "Ok") {
-    return fromFrontmatter(result._0, blogPostFromText(result._1));
-  } else {
-    return {
-      content: "Not found",
-      author: "",
-      bsky: "",
-      date: "",
-      last_edit: "",
-      title: "not found",
-      description: "not found"
-    };
-  }
-}
-
 let _init;
 
 exports.Post = Post;
@@ -279,5 +239,4 @@ exports._init = _init;
 exports.getCachedBlogEntries = getCachedBlogEntries;
 exports.waitForRefresh = waitForRefresh;
 exports.renderBlogPost = renderBlogPost;
-exports._renderBlogPost = _renderBlogPost;
 /*  Not a pure module */

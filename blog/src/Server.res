@@ -150,7 +150,14 @@ let getBlogEntries = () => {
     }
   })
   let filtered = Belt.List.keepMap(blogposts, opt => opt)
-  Belt.List.toArray(filtered)
+  let res = Belt.List.toArray(filtered)
+  res->Array.sort((x,y) => {
+    let (_, p1) = x
+    let (_, p2) = y
+    Date.compare(Date.fromString(p2.date), Date.fromString(p1.date))
+  })
+  res
+
 }
 
 let refreshCache = () => {
