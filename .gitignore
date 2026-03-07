@@ -5,3 +5,4 @@ node_modules/
 js/
 sw.js
 viper/stats.json
+blog/lib/*

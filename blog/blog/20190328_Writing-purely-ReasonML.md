@@ -1,3 +1,12 @@
+---
+author: Cristian Carlesso
+twitter: @kentaromiura
+bsky: https://bsky.app/profile/kentaromiura.bsky.social
+date: 2019-03-28
+last_edit: 2025-02-16
+title: Writing purely ReasonML
+description: Writing purely ReasonML inspired by Haskell.
+---
 Writing purely ReasonML
 ========================
 

@@ -1,0 +1,15 @@
+{
+  "name": "blog",
+  "sources": {
+    "dir": "src",
+    "subdirs": true
+  },
+  "package-specs": {
+    "module": "commonjs",
+    "in-source": true
+  },
+  "jsx": {},
+  "warnings": {
+    "error": "+101"
+  }
+}
